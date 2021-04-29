@@ -1,0 +1,13 @@
+[template]
+src = "slapd.tmpl"
+dest = "/etc/openldap/slapd.conf"
+keys = [
+    "/db/name",
+    "/db/hostname",
+    "/db/user",
+    "/db/password",
+    "/db/port",
+    "/dn/suffix",
+    "/dn/root",
+    "/encrypted/password",
+]

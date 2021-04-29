@@ -1,0 +1,10 @@
+[template]
+src = "odbc.tmpl"
+dest = "/etc/odbc.ini"
+keys = [
+    "/db/name",
+    "/db/hostname",
+    "/db/user",
+    "/db/password",
+    "/db/port"
+]

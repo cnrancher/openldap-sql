@@ -1,0 +1,32 @@
+# $OpenLDAP$
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include         /etc/openldap/schema/core.schema
+include         /etc/openldap/schema/cosine.schema
+include         /etc/openldap/schema/inetorgperson.schema
+
+# Define global ACLs to disable default read access.
+
+# Do not enable referrals until AFTER you have a working directory
+# service AND an understanding of referrals.
+#referral       ldap://root.openldap.org
+
+pidfile         /usr/local/var/slapd.pid
+argsfile        /usr/local/var/slapd.args
+
+#######################################################################
+# sql database definitions
+#######################################################################
+
+database        sql
+suffix          "{{getv "/dn/suffix"}}"
+rootdn          "{{getv "/dn/root"}}"
+rootpw          {{getv "/encrypted/password"}}
+dbname          ldap
+dbuser          {{getv "/db/user"}}
+dbpasswd        {{getv "/db/password"}}
+subtree_cond    "ldap_entries.dn LIKE CONCAT('%',?)"
+concat_pattern  "?||?"
+has_ldapinfo_dn_ru      no
