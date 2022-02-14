@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -e
+
+source $(dirname $0)/version
+
+cd $(dirname $0)/../package
+
+BIN="${PWD}/../bin"
+DIST="${PWD}/../dist"
+
+rm -rf ${BIN}/*
+rm -rf ${DIST}/*
+
+CONFD_VERSION=${CONFD_VERSION:-0.16.0}
+LDAP_VERSION=${LDAP_VERSION:-2.6.1}
+ARCH=`uname -m`
+[ "${ARCH}" = "x86_64" ] && ARCH="amd64"
+OS=`uname -s | tr '[:upper:]' '[:lower:]'`
+
+if [ -z "$LDAP_VERSION" ]; then
+    echo "ldap version is required when building images"
+    exit 1
+fi
+
+if [ -z "$CONFD_VERSION" ]; then
+    echo "confd version is required when building images"
+    exit 1
+fi
+
+mkdir "/ldap"
+
+echo "downloading"
+echo "openldap"
+curl -sSL --proxy "${PROXY}" "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-${LDAP_VERSION}.tgz" | tar xzf - -C /ldap && mv /ldap/openldap* /opt/openldap
+echo "confd"
+curl -sSL --proxy "${PROXY}" "https://github.com/kelseyhightower/confd/releases/download/v${CONFD_VERSION}/confd-${CONFD_VERSION}-${OS}-${ARCH}" > ${BIN}/confd && chmod +x ${BIN}/confd
+echo "download succeed"
+
+echo "building openldap ${LDAP_VERSION}"
+cd /opt/openldap
+./configure --prefix=/usr --exec-prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin --sysconfdir=/etc --datadir=/usr/share --localstatedir=/var --mandir=/usr/share/man --infodir=/usr/share/info --enable-sql --disable-bdb --disable-ndb --disable-hdb --disable-dependency-tracking --silent
+make depend && make && make install && mkdir /usr/local/var
+echo "built openldap"
+
+mkdir -p $BIN/openldap
+LDAP_BASE="/opt/openldap/servers/slapd"
+cd "${LDAP_BASE}"
+for i in `ls -d slap*`; do
+    [ ! -d "${LDAP_BASE}/$i" ] && [ -x "${LDAP_BASE}/$i" ] &&  cp "$i" $BIN/openldap/
+done
+cp -r /etc/openldap "$DIST/openldap"
