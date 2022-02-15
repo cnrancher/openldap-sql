@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -e 
+
+source $(dirname $0)/version
+
+cd $(dirname $0)
+BIN="${PWD}/../bin"
+DIST="${PWD}/../dist"
+PACKAGE="${PWD}/../package"
+FILEBASE="${PACKAGE}/base"
+CURRENT="${PACKAGE}/current"
+
+
+FILES_REQUIRED="$BIN/confd $BIN/openldap/slapd $DIST/openldap"
+for file in `echo $FILES_REQUIRED`; do 
+    echo "$file";
+    if [ ! -e "$file" ]; then
+    echo "file $file doesn't exist but required for package."
+    exit 1
+    fi
+done
+
+mkdir -p "${CURRENT}"
+cd "${CURRENT}"
+cp -r $BIN ./
+cp -r $DIST ./
+
+ARGS=""
+[ -z "$PROXY" ] || ARGS="$ARGS --build-arg PROXY=$PROXY"
+[ -z "${CN_MIRROR}" ] || ARGS="$ARGS --build-arg CN_MIRROR=$CN_MIRROR"
+
+for i in `cat ${PACKAGE}/targets.txt` 
+do 
+    echo "packaging openldap image with sql backend-$i"
+    cp -r ${FILEBASE}/* ./
+    cp -r ${PACKAGE}/$i/* ./
+    docker build -t "${REPO}/openldap-$i:${TAG}" $ARGS .
+done

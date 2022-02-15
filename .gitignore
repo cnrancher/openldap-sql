@@ -1,0 +1,4 @@
+.dapper
+bin/
+dist/
+package/current

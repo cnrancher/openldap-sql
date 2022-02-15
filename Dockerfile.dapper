@@ -1,0 +1,32 @@
+FROM ubuntu:20.04
+ARG DAPPER_HOST_ARCH
+ARG CN_MIRROR
+ENV ARCH $DAPPER_HOST_ARCH
+
+RUN touch /etc/apt/apt.conf.d/proxy.conf &&\
+    [ -z "${CN_MIRROR}" ] || sed -i "s;archive.ubuntu.com;mirrors.aliyun.com;g" /etc/apt/sources.list &&\
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt -y install tzdata&&\
+    apt-get install -y git unixodbc make gcc groff ldap-utils unixodbc-dev curl debconf-utils docker.io &&\
+    apt-get clean -y &&\
+    rm -rf \
+    /var/cache/debconf/* \
+    /var/lib/apt/lists/* \
+    /var/log/* \
+    /tmp/* \
+    /var/tmp/*
+
+ARG PROXY
+ARG NOPROXY
+ARG LDAP_VERSION
+ARG CONFD_VERSION
+
+ENV DAPPER_ENV REGISTRY REGISTRY_USER REGISTRY_PASSWORD REPO TAG DRONE_TAG PROXY LDAP_VERSION CONFD_VERSION CN_MIRROR
+ENV DAPPER_SOURCE /src
+ENV DAPPER_OUTPUT ./bin ./dist
+ENV DAPPER_DOCKER_SOCKET true
+ENV HOME ${DAPPER_SOURCE}
+WORKDIR ${DAPPER_SOURCE}
+
+ENTRYPOINT ["./scripts/entry"]
+CMD ["ci"]
